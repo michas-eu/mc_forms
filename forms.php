@@ -10,6 +10,7 @@ final class formElement {
 	protected $labelId;
 	protected $labelCls;
 	protected $name;
+	protected $onActv;
 	protected $disabl;
 	protected $ronly;
 
@@ -29,6 +30,7 @@ final class formElement {
 		$this->labelId='';
 		$this->labelCls='';
 		$this->name='';
+		$this->onActv='';
 		$this->options=array();
 		if ($array) $this->multiset($array);
 	}
@@ -50,8 +52,9 @@ final class formElement {
 		elseif ($key=='label')     $t->label    = htmlspecialchars($value);
 		elseif ($key=='inValue')   $t->inValue  = htmlspecialchars($value);
 		elseif ($key=='type')      $t->type     = htmlspecialchars($value);
-		elseif ($key=='value')     $t->value    = htmlspecialchars($value);
+		elseif ($key=='onActv')    $t->onActv   = htmlspecialchars($value);
 		elseif ($key=='rawValue')  $t->value    = $value;
+		elseif ($key=='value')     $t->setValue($value);
 		elseif ($key=='autoValue') $t->autoValue($value);
 		elseif ($key=='multiVals') $t->putValList($value);
 		else return true;
@@ -70,6 +73,7 @@ final class formElement {
 		elseif ($key=='label')    return (htmlspecialchars_decode($t->label));
 		elseif ($key=='inValue')  return (htmlspecialchars_decode($t->inValue));
 		elseif ($key=='type')     return (htmlspecialchars_decode($t->type));
+		elseif ($key=='onActv')   return (htmlspecialchars_decode($t->onActv));
 		elseif ($key=='value')    return (htmlspecialchars_decode($t->value));
 		else return true;
 		return false;
@@ -79,6 +83,10 @@ final class formElement {
 		if ($this->type=='password') return;
 		$tmp = $this->cmpAutoValue();
 		if ($tmp !== false) $value = $tmp;
+		$this->setValue($value);
+	}
+
+	protected function setValue($value) {
 		if (is_array($value)):
 			$old = $value;
 			$value=array();
@@ -152,8 +160,8 @@ final class formElement {
 	public function putValList($arr) {
 		$first=true;
 		foreach($arr as $one):
-			if ($first) $this->putVal($one,true);
-			else $this->putVal($one);
+			if (!is_array($one)) $this->putVal($one,$one,$first);
+			else $this->putVal($one,$first);
 			$first=false;
 		endforeach;
 	}
@@ -169,44 +177,64 @@ final class formElement {
 		return false;
 	}
 
-	public function ech($pat) {
+	public function doActv($f) {
+		if (!($f instanceof formElement)):
+			trigger_error('F is wrong type',E_USER_ERROR);
+		endif;
+		$tmp1 = $f->get('inValue');
+		$tmp2 = $this->get('onActv');
+		return ($tmp1 == $tmp2);	
+	}
+
+	public function ech($pat='l_e') {
 		echo($this->gen($pat));
 	}
 
-	public function gen($pat) {
+	public function gen($pat='l_e') {
 		$gen = "";
 		if ($pat=='le'):
-			$gen.= $this->putLabel(FALSE);
+			$gen.= $this->putLabel('bmc');
 			$gen.= $this->putElement();
 			$gen.= "</label>\n";
 		elseif ($pat=='l_e'):
-			$gen.= $this->putLabel(FALSE);
+			$gen.= $this->putLabel('bmc');
 			$gen.= ' ';
 			$gen.= $this->putElement();
 			$gen.= "</label>\n";
 		elseif ($pat=='el'):
-			$gen.= $this->putElement(FALSE);
-			$gen.= $this->putLabel();
+			$gen.= $this->putLabel('b');
+			$gen.= $this->putElement(false);
+			$gen.= $this->putLabel('m');
 			$gen.= "</label>\n";
 		elseif ($pat=='e_l'): 
-			$gen.= $this->putElement(FALSE);
+			$gen.= $this->putLabel('b');
+			$gen.= $this->putElement(false);
 			$gen.= ' ';
-			$gen.= $this->putLabel();
+			$gen.= $this->putLabel('m');
 			$gen.= "</label>\n";
 		elseif ($pat=='lbre'):
-			$gen.= $this->putLabel(FALSE);
+			$gen.= $this->putLabel('bmc');
 			$gen.= "<br />\n";
 			$gen.= $this->putElement();
 			$gen.= "</label>\n";
 		elseif ($pat=='ebrl'):
-			$gen.= $this->putLabel(FALSE,FALSE);
+			$gen.= $this->putLabel('b');
 			$gen.= $this->putElement();
 			$gen.= "<br />\n";
-			$gen.= $this->putLabel(TRUE,TRUE,FALSE);
+			$gen.= $this->putLabel('me');
                 elseif ($pat=='le_row'):
                         $gen.= "<tr>\n";
+                        $gen.= "<td>";
+			$gen.= $this->putLabel('mbe');
+                        $gen.= "</td>";
+                        $gen.= "<td>";
+			$gen.= $this->putElement();
+                        $gen.= "</td>";
+			$gen.= "</tr>\n";
+                elseif ($pat=='le_throw'):
+                        $gen.= "<tr>\n";
                         $gen.= "<th>";
-			$gen.= $this->putLabel();
+			$gen.= $this->putLabel('mbe');
                         $gen.= "</th>";
                         $gen.= "<td>";
 			$gen.= $this->putElement();
@@ -214,34 +242,99 @@ final class formElement {
 			$gen.= "</tr>\n";
 		elseif ($pat=='e'):
 			$gen.= $this->putElement();
+		elseif ($pat=='lc'):
+			$gen.= $this->putLabel('bmce');
 		elseif ($pat=='l'):
-			$gen.= $this->putLabel();
+			$gen.= $this->putLabel('bme');
 		endif;
 		return $gen;
 	}
 
-	protected function putLabel($close = TRUE, $dotxt = TRUE, $begin = TRUE) {
+	protected function putLabel($ptr) {
+		#Begin Middle Colon End
+		$ptr = array_flip(str_split($ptr));
+		#No colons for hiddent types
+		if ($this->type == 'hidden') unset($ptr['c']);
 		$gen = "";
-                if ($begin):
+                if (isset($ptr['b'])):
                         $gen.= "<label";
                         if ($this->labelId) $gen.= ' id="'.$this->labelId.'"';
                         if ($this->labelCls) $gen.= ' class="'.$this->labelCls.'"';
                         if ($this->id) $gen.= ' for="'.$this->id.'"';
                         $gen.= ">\n";
                 endif;
-                if ($dotxt and $this->label):
+                if (isset($ptr['m']) and $this->label):
 			$gen.= $this->label;
-			//Typy ukryte nie mają dwukropków.
-			if ($this->type != 'hidden') $gen.= ':';
+			if (isset($ptr['c'])) $gen.= ':';
 			$gen.= "\n";
 		endif;
-		if ($close) $gen.= "</label>";
+		if (isset($ptr['e'])) $gen.= "</label>";
 		return $gen;
+	}
+
+	public function canGenChilds() {
+		switch ($this->type):
+		case 'radiorow':
+		case 'radiorows':
+                case 'checkboxrow':
+                case 'checkboxrows':
+			return true;
+			break;
+		default:
+			return false;
+		endswitch;
+	}
+
+	public function genChildren() {
+		switch ($this->type):
+		case 'radios':
+                case 'checkboxes':
+			if ($this->type == 'checkboxes') $type = 'checkbox';
+			else $type = 'radio';
+			$isradio = true;
+			if (!$isradio) $isbox = true;	
+			$a = array();
+			$i = 1;
+			foreach ($this->options as $opt):
+				$a[] = $this->genOneChild($opt,$i,$type);
+				$i++;
+			endforeach;
+			break;
+		default:
+			trigger_error("Not working for this type.",E_USER_ERROR);
+		endswitch;
+		return $a;
+	}
+
+	protected function genOneChild($opt,$i,$type) {
+		$x = new formElement();
+		$x->set('type',$type);
+		if ($this->id) $x->set('id',$this->id."_child_".$i);
+		if ($this->cls) $x->set('class',$this->class);
+		if ($this->labelId) $x->set('labelId',$this->labelId."_child_".$i);
+		if ($this->labelCls) $x->set('labelCls',$this->labelCls);
+		if ($this->ronly) $x->set('ronly',$this->ronly);
+		if ($this->disabl) $x->set('disabl',$this->disabl);
+		if ($type=='checkbox' and $this->name) $x->set('name',$this->name.'[]');
+		elseif ($this->name) $x->set('name',$this->name);
+		$x->set('label',$opt['label']);
+		$x->set('inValue',$opt['value']);
+		if ($type=='checkbox' and $this->isValIn($opt['value'])):
+			$x->set('value',$opt['value']);
+		elseif ($type!='checkbox'):
+			$x->set('value',$this->value);
+		else:
+		endif;
+		return $x;
 	}
 
 	protected function putElement() {
 		$gen = '';
                 switch ($this->type):
+		case 'radios':
+                case 'checkboxes':
+			trigger_error("Not working for this type.",E_USER_ERROR);
+			break;
 		case 'textarea':
 			$gen.= '<textarea';
 			$gen.= $this->putElementStd();
@@ -274,60 +367,18 @@ final class formElement {
 			endforeach;
                         $gen.= "</select>\n";
                         break;
-		case 'radioone':
+		case 'radio':
 			$gen.= "<input type='radio'";
 			$gen.= $this->putElementStd();
 			if ($this->inValue==$this->value) $slt=' checked="checked"';
 			else $slt='';
 			$gen.= ' value="'.$this->inValue.'"'.$slt." />\n";
                         break;
-		case 'radiorow':
-			foreach ($this->options as $opt):
-				$gen.= "<input type='radio'";
-				$gen.= $this->putElementStd();
-				if ($opt['value']==$this->value) $gen.=' checked="checked"';
-                                $gen.= " value='{$opt['value']}' />\n";
-				$gen.= $opt['label']."\n";
-			endforeach;
-                        break;
-		case 'radiorows':
-                        $first = true;
-			foreach ($this->options as $opt):
-                                if (!$first) $gen.= "<br />\n";
-				$gen.= "<input type='radio'";
-				$gen.= $this->putElementStd();
-				if ($opt['value']==$this->value) $gen.=' checked="checked"';
-                                $gen.= " value='{$opt['value']}' />\n";
-				$gen.= $opt['label']."\n";
-                                $first = false;
-			endforeach;
-                        break;
                 case 'checkbox':
                         $gen.= '<input type="checkbox" value="'.$this->inValue.'"';
                         $gen.= $this->putElementStd();
 			if ($this->inValue==$this->value) $gen.=' checked="checked"';
                         $gen.= ' />';
-                        break;
-                case 'checkboxrow':
-			foreach ($this->options as $opt):
-				$gen.= "<input type=\"checkbox\" value=\"{$opt['value']}\"";
-				$gen.= $this->putElementStd();
-				if ($this->isValIn($opt['value'])) $gen.= ' checked="checked"';
-				$gen.= " />\n";
-				$gen.= $opt['label']."\n";
-			endforeach;
-                        break;
-                case 'checkboxrows':
-			$first = true;
-			foreach ($this->options as $opt):
-                                if (!$first) $gen.= "<br />\n";
-				$gen.= "<input type=\"checkbox\" value=\"{$opt['value']}\"";
-				$gen.= $this->putElementStd();
-				if ($this->isValIn($opt['value'])) $gen.= ' checked="checked"';
-				$gen.= " />\n";
-				$gen.= $opt['label']."\n";
-                                $first = false;
-			endforeach;
                         break;
 		case 'password':
 			$gen.= '<input type="password"';
@@ -354,11 +405,9 @@ final class formElement {
 
 	private function putElementStd() {
 		$gen = '';
-		if ($this->type == 'checkboxrow' or $this->type == 'checkboxrows') $multi='[]';
-		else $multi='';
-		if ($this->name)   $gen.= " name=\"{$this->name}$multi\"";
-		if ($this->id)     $gen.= " id=\"{$this->id}\"";
-		if ($this->cls)    $gen.= " class=\"{$this->cls}\"";
+		if ($this->name) $gen.= " name=\"{$this->name}\"";
+		if ($this->id)   $gen.= " id=\"{$this->id}\"";
+		if ($this->cls)  $gen.= " class=\"{$this->cls}\"";
 		if ($this->disabl) $gen.= " disabled=\"disabled\"";
 		if ($this->ronly)  $gen.= " readonly=\"readonly\"";
 		return $gen;
