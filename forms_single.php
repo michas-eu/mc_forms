@@ -50,7 +50,7 @@ class form_element_single {
 		if (!is_array($a)) return true;
 		$tmp = false;
 		foreach ($a as $k => $v):
-			$tmp = $tmp or $this->set($k,$v);
+			$tmp = $tmp || $this->set($k,$v);
 		endforeach;
 		return $tmp;
 	}
@@ -71,14 +71,20 @@ class form_element_single {
 		return true;
 	}
 
-	public function autoValue() {
+	public function autoValue($a=array()) {
 		if ($this->type=='password') return;
-		$tmp = $this->cmpAutoValue();
+		$tmp = $this->cmpAutoValue($a);
 		if ($tmp === false) return;
 		$this->value = $tmp;
 	}
 
-	public function cmpAutoValue() {
+	public function cmpAutoValue($a=array()) {
+		if ($a):
+			if (isset($a[$this->name])):
+				return $a[$this->name];
+			endif;
+			return false;
+		endif;
 		if (isset($_POST[$this->name])):
 			return $_POST[$this->name];
 		elseif (isset($_GET[$this->name])):
@@ -205,7 +211,10 @@ class form_element_single {
 		#Begin Middle Colon End
 		$ptr = array_flip(str_split($ptr));
 		#No colons for hiddent types
-		if ($this->type == 'hidden') unset($ptr['c']);
+		if ($this->type == 'hidden'):
+			unset($ptr['c']);
+			unset($ptr['m']);
+		endif;
 		$gen = "";
                 if (isset($ptr['b'])):
                         $gen.= "<label";
