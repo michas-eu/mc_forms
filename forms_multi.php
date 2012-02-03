@@ -11,10 +11,10 @@ class form_element_multi extends form_element_ext {
 		parent::__construct($array);
 	}
 
-	public function __invoke($pat='auto',$ext_tag='div') {
+	public function gen($pat='auto',$ext_tag='div') {
 		$this->gen_subelms();
-		if (!$this->multi) return parent::__invoke($pat);
-		if ($pat == 'l_grand') return parent::__invoke('l');
+		if (!$this->multi) return parent::gen($pat);
+		if ($pat == 'l_grand') return parent::gen('l');
 
 		$gen = "";
 		if ($ext_tag):

@@ -1,0 +1,4 @@
+This branch is for very old PHP servers with version 5.2.
+
+The API is incomaptible with the main version.
+It should work with newer PHP though.

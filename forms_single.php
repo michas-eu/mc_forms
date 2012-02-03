@@ -123,10 +123,10 @@ class form_element_single {
 	}
 
 	public function __toString() {
-		return $this->__invoke();
+		return $this->gen();
 	}
 	
-	public function __invoke($pat='auto') {
+	public function gen($pat='auto') {
 		$gen = "";
 		if ($pat == 'auto'):
 			switch ($this->type):
@@ -141,13 +141,13 @@ class form_element_single {
 			default:
 				$pat = 'l_e';
 			endswitch;
-			return $this->__invoke($pat);
+			return $this->gen($pat);
 		elseif ($x = strpos($pat,'_li')):
 			$gen.= "<li>";
-			$gen.= $this->__invoke(substr($pat,0,$x));
+			$gen.= $this->gen(substr($pat,0,$x));
 			$gen.= "</li>";
 		elseif ($x = strpos($pat,'_br')):
-			$gen.= $this->__invoke(substr($pat,0,$x));
+			$gen.= $this->gen(substr($pat,0,$x));
 			$gen.= "<br>";
 		elseif ($pat=='le'):
 			$gen.= $this->putLabel('bmc');
