@@ -1,6 +1,6 @@
 <?php
 
-class form_element_ext extends form_element_single {
+class fe_ext extends fe_single {
 	#Mainly for selects.
 
 	protected $options;

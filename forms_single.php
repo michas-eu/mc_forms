@@ -1,6 +1,6 @@
 <?php
 
-class form_element_single {
+class fe_single {
 	protected $type;
 	protected $value;
 	protected $inValue;
