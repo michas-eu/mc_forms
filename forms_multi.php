@@ -1,6 +1,6 @@
 <?php
 
-class form_element_multi extends form_element_ext {
+class fe_multi extends fe_ext {
 	#Include support for sets of fields.
 
 	protected $subelms;
@@ -54,7 +54,7 @@ class form_element_multi extends form_element_ext {
 	}
 
 	protected function gen_subelm($opt,$i,$type) {
-		$x = new form_element_single();
+		$x = new fe_single();
 		$x->set('type',$type);
 		if ($this->id) $x->set('id',$this->id."_child_".$i);
 		if ($this->cls) $x->set('class',$this->class.'_child');
